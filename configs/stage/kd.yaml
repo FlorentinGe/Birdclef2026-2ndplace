@@ -1,0 +1,9 @@
+# Perch2 embedding distillation stage defaults (Stage 1).
+# Backbone YAMLs may override pretrain_lr and pretrain_epochs.
+
+stage: kd
+pretrain_epochs: 7
+pretrain_lr: 5.0e-4
+pretrain_batch_size: 64
+pretrain_warmup: 1
+perch_emb_dim: 1536

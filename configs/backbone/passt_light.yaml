@@ -1,0 +1,36 @@
+# PaSST-Light backbone overrides
+# hear21passt arch: passt_l_kd_p16_128_ap47
+# ViT-B/16 (embed_dim=768, depth=7), AudioSet-pretrained with KD.
+# "L" = Light (reduced depth).  Same D=768 and stride=10 as passt_base.
+# Loaded via hear21passt (NOT a timm model): pip install 'hear21passt>=0.0.19'
+#
+# vs passt_base:
+#   depth 7 vs 12  → ~58 % transformer FLOPs
+#   Same stride=10  → same token count (588 per 5s chunk); memory savings from
+#   fewer blocks only.  Expect batch_size ~14 on RTX 4090 vs ~8 for passt_base.
+#
+# Inference note: still 588 tokens per 5s chunk (stride=10, depth doesn't
+# change token count).  ~58 % of passt_base cost.  CPU inference still slow;
+# recommended use is as an offline KD teacher, not direct submission model.
+#
+# Positional embedding: same constraint as passt_base — duration must be 10
+# so training clips produce exactly 99 time patches (matching pretrained weights).
+
+backbone: passt_light
+in_chans: 1
+n_mels: 128
+n_fft: 1024
+hop_length: 320
+fmin: 0
+fmax: 16000
+imagenet_norm: false
+use_llrd: false
+drop_path_rate: 0.0
+use_amp: true
+use_bf16: true
+swa_start_epoch: 11
+warmup_epochs: 2
+lr: 1.0e-4
+weight_decay: 0.05
+num_epochs: 20
+duration: 10

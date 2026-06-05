@@ -1,0 +1,50 @@
+# Soundscape pseudo-label stage (Stage 4).
+# Implements the 2025 BirdCLEF 1st-place "Multi-Iterative Noisy Student" recipe:
+#
+#   1. Power transform on pseudo-labels: label = prob^power (no threshold)
+#      Round 1: power=1.0  |  Round 2: ≈1.54  |  Round 3: ≈1.82  |  Round 4: ≈1.67
+#
+#   2. MixUp ratio=1.0: every focal clip is mixed 50/50 with a random
+#      pseudo-labeled soundscape chunk (constant weight 0.5).
+#
+#   3. Weighted soundscape sampler: higher-confidence files sampled more often.
+#
+# ── Recommended invocation (fresh from backbone, matching 1st-place exactly) ──
+#
+#   python train.py --backbone eca_nfnet_l0 --stage sc_pl \
+#       --sc_pl_dir  /path/to/sc_pl_round1 \
+#       --checkpoint /path/to/eca_nfnet_l0_1st_place_backbone.pth \
+#       --output_dir /path/to/exp52 \
+#       --use_amp true --use_bf16 true
+#
+#   LR/scheduler/epochs come from this file + backbone yaml (lr=5e-4, cosine_wr).
+#   Do NOT pass --focal_pl_csv: sc_pl always uses hard labels for focal clips
+#   (0.5*hard + 0.5*sc_pseudo). Focal PL knowledge is baked into the checkpoint.
+#
+# ── Fine-tuning from a trained checkpoint (exp50/51 style, now discouraged) ──
+#
+#   Add: --lr 1e-4 --scheduler cosine --swa_start_epoch 11 --num_epochs 20
+#   Reason it underperforms: continuing from an already-converged model at a
+#   higher LR than where it left off disrupts the focal representation.
+
+stage: sc_pl
+
+# Scheduler: cosine_wr matches the 1st-place supervised schedule exactly.
+# LR (5e-4) and restart period come from backbone yaml and this file.
+# The backbone yaml sets lr=5e-4; that default is intentionally kept here.
+scheduler: cosine_wr
+cosine_restart_period: 5
+warmup_epochs: 1
+
+# 30 epochs = 1 warmup + 5 full cosine cycles (5 epochs each).
+# SWA starts at epoch 16 (after 3 cycles), averaging the final 2 cycles.
+num_epochs: 30
+swa_start_epoch: 16
+
+# Round 1: no noise reduction (power=1 = identity transform).
+# Increase per iteration: round2=1.54, round3=1.82, round4=1.67
+pl_sc_pseudo_power: 1.0
+
+# Disabled — soundscape MixUp distributes coverage broadly;
+# per-file weighted sampler handles confidence weighting.
+rare_upsample_thresh: 0

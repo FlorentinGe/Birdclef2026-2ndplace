@@ -1,0 +1,35 @@
+# ConvNeXt-V2-Base (FCMAE → IN-22k → IN-1k fine-tune)
+# 89M params, 1024 features — same capacity as ConvNeXt-Base.
+#
+# Key difference from convnext_base.fb_in22k_ft_in1k:
+#   Pretraining: MAE-style masked autoencoder (FCMAE) on IN-22k before supervised
+#   fine-tune, vs direct supervised classification on IN-22k.  FCMAE learns more
+#   general, reconstruction-oriented features; expected lower OOF correlation with
+#   IN-22k supervised ConvNeXt in the ensemble.
+#
+# Architecture identical to ConvNeXt-Base:
+#   - 7×7 depthwise convolutions, inverted bottleneck, LayerNorm throughout.
+#   - No BN in backbone → LayerNorm has FP32-range dynamic behaviour.
+#   - AMP + BF16 safe; GradScaler disabled automatically with use_bf16=true.
+#
+# SWA: backbone uses LayerNorm only; SED head BN still requires
+#   safe_copy_bn_buffers (same as all other backbones).
+#
+# imagenet_norm: false — mel [0,1] normalisation is applied in the dataset;
+#   full fine-tuning on audio dominates over init-time normalisation.
+#
+# Epochs: 25 (same as convnext_base — larger model than EfficientNetV2-S,
+#   likely similar convergence rate).
+
+backbone: convnextv2_base.fcmae_ft_in22k_in1k
+use_amp: true
+use_bf16: true
+imagenet_norm: false
+use_llrd: false
+drop_path_rate: 0.15
+swa_start_epoch: 11
+warmup_epochs: 2
+lr: 5.0e-4
+weight_decay: 1.0e-4
+num_epochs: 25
+duration: 20

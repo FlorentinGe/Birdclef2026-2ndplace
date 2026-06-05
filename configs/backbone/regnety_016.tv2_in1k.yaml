@@ -1,0 +1,27 @@
+# RegNetY-016 backbone overrides
+# ~84M params vs ~165M for regnety_032 — faster per epoch, fits larger batch.
+# tv2_in1k = torchvision v2 pretrained weights (same architecture, improved recipe).
+#
+# Pretrained backbone available from BirdCLEF 2025 1st place solution
+# (averaged over fold 2 + fold 3, iteration-4 pseudo-labelled):
+#   extracted_backbones/regnety_016_tv2_1st_place_backbone_avg.pth
+# freeze_epochs=0: backbone is already specialised on bird audio; letting it
+# move from ep1 produces more diverse predictions than freeze=2 (exp37 vs
+# exp37b: 0.64 vs 0.93 cosine similarity with exp35b).
+#
+# SWA: with a warm-start checkpoint convergence arrives early; swa_start_epoch=8
+# mirrors the regnety_032 setting. Without a checkpoint, raise to 11.
+
+backbone: regnety_016.tv2_in1k
+freeze_epochs: 0
+use_amp: true
+use_bf16: true
+imagenet_norm: false
+use_llrd: false
+drop_path_rate: 0.15
+swa_start_epoch: 8
+warmup_epochs: 2
+lr: 5.0e-4
+weight_decay: 1.0e-4
+num_epochs: 20
+duration: 20

@@ -1,0 +1,21 @@
+# EfficientNetV2-S backbone overrides
+# exp16/exp17: no KD, LB 0.850/0.861.
+# exp19: 5ep KD → LB 0.872. Peaked ep11 with KD, gradual flat decline after.
+# Standard CNN with BatchNorm — AMP + BF16 safe. 20M params, 1280 features.
+# SWA BN fix (safe_copy_bn_buffers) required — update_bn() causes NaN with EfficientNetV2.
+#
+# Soundscape AUC is characteristically noisy (±0.04 epoch-to-epoch).
+# With 10ep KD peak arrives at ep8-10 — SWA start moved to 8 to capture it.
+
+backbone: tf_efficientnetv2_s.in21k_ft_in1k
+use_amp: true
+use_bf16: true
+imagenet_norm: false
+use_llrd: false
+drop_path_rate: 0.15
+swa_start_epoch: 8
+warmup_epochs: 2
+lr: 5.0e-4
+weight_decay: 1.0e-4
+num_epochs: 20
+duration: 20

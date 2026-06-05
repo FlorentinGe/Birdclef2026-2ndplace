@@ -1,0 +1,38 @@
+# EfficientNet-B4, Noisy Student pretraining on JFT-3B (Google)
+# 17.5M params, 1792 features, 7×16 spatial output @ 224×512 input.
+#
+# Pretraining: Noisy Student Training on JFT-3B (3 billion labelled images) —
+# 200× more data than IN-1k and 150× more than IN-22k. The larger pretraining
+# scale produces a different feature space than our current pool (all IN-1k
+# or IN-22k). Directly validated: B4-NS was in the 2025 1st-place final ensemble
+# alongside ECA-NFNet-L0.
+#
+# Architecture: EfficientNet-B4 uses the original compound-scaled EfficientNet
+# design (depthwise separable + SE, ~3×3 effective kernels) — different from
+# EfficientNetV2-S (fused MBConv + no SE in first stages). 1792 output features
+# vs EffV2-S's 1280 — larger SED head linear layers.
+#
+# AMP + BF16: safe — standard BatchNorm architecture.
+# SWA start: 8 (same as EffV2-S; similar model size, similar convergence rate).
+# Epochs: 25 — EffV2-S was still improving at ep20; B4 is similar in size so
+# the same extension applies.
+#
+# Note: the 'tf_' prefix is timm's TF-ported variant — weights are identical,
+# just ported from the original TensorFlow checkpoint.
+
+backbone: tf_efficientnet_b4.ns_jft_in1k
+# freeze_epochs=0: backbone is already specialised on bird audio; letting it
+# move from ep1 produces more diverse predictions than freeze=2 (exp37 vs
+# exp37b: 0.64 vs 0.93 cosine similarity with exp35b).
+freeze_epochs: 0
+use_amp: true
+use_bf16: true
+imagenet_norm: false
+use_llrd: false
+drop_path_rate: 0.15
+swa_start_epoch: 8
+warmup_epochs: 2
+lr: 5.0e-4
+weight_decay: 1.0e-4
+num_epochs: 25
+duration: 20

@@ -1,0 +1,20 @@
+# RegNetY-032 backbone overrides
+# exp20: +0.012 LB over EfficientNetV2-S (0.861→0.873) as a pure backbone swap (no KD).
+# Standard CNN: use_amp + use_bf16 safe (no ScaledStdConv); faster than NFNet.
+#
+# SWA note: exp20 (no KD) peaked at ep12/20 then gradually declined.
+# With KD warm start, convergence is faster — peak may come at ep8-10.
+# Watch the val curve live; if plateau arrives before ep11, lower swa_start_epoch to 8.
+
+backbone: regnety_032
+use_amp: true
+use_bf16: true
+imagenet_norm: false
+use_llrd: false
+drop_path_rate: 0.15
+swa_start_epoch: 8
+warmup_epochs: 2
+lr: 5.0e-4
+weight_decay: 1.0e-4
+num_epochs: 20
+duration: 20

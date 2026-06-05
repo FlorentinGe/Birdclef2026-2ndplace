@@ -1,0 +1,35 @@
+# ConvNeXt-Base (Facebook IN-22k → IN-1k fine-tune)
+# 87.6M params, 1024 features, 7×16 spatial output @ 224×512 input.
+#
+# Key architectural differences from NFnet/EffV2/RegNet:
+#   - 7×7 depthwise convolutions (vs 3×3 in all other pool CNNs) — wider
+#     frequency receptive field per layer in mel spectrograms.
+#   - LayerNorm throughout backbone (no BatchNorm) — per-sample normalisation,
+#     which may give more consistent rare-species predictions.
+#   - Inverted bottleneck design aligned with transformers.
+#
+# AMP + BF16: safe — LayerNorm has FP32-range dynamic behaviour, no scaled
+# std conv NaN risk. GradScaler is disabled automatically with use_bf16=true.
+#
+# SWA: backbone uses LayerNorm (no BN buffers to update), but SED head BN
+# still requires the standard safe_copy_bn_buffers fix. swa_start_epoch=11
+# gives the larger model slightly more initial convergence time vs EffV2-S's 8.
+#
+# imagenet_norm: false — mel [0,1] normalisation is applied in the dataset;
+# CNN backbones do not require ImageNet mean/std (unlike DINO ViT).
+#
+# Epochs: 25 recommended (EffV2-S was still improving at ep20 — ConvNeXt-Base
+# is 4× larger so converges at most as fast, likely slightly slower).
+
+backbone: convnext_base.fb_in22k_ft_in1k
+use_amp: true
+use_bf16: true
+imagenet_norm: false
+use_llrd: false
+drop_path_rate: 0.15
+swa_start_epoch: 11
+warmup_epochs: 2
+lr: 5.0e-4
+weight_decay: 1.0e-4
+num_epochs: 25
+duration: 20

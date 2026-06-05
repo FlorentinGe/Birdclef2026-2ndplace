@@ -1,0 +1,48 @@
+# EfficientViT-L2 (MIT, r288 — trained at 288px, IN-1k)
+# ~82.7% IN-1k top-1; hybrid CNN + linear cascaded group attention.
+#
+# Architecture overview:
+#   - 4 downsampling stages (total stride 16) → output (B, C, H/16, W/16).
+#   - Early stages: depthwise conv blocks (no attention).
+#   - Later stages: cascaded group attention with linear complexity O(N) — NOT
+#     quadratic self-attention.  This is the efficiency gain vs standard ViT.
+#   - Uses both BatchNorm (conv stages) and some LayerNorm (attention stages).
+#
+# Routing: backbone name starts with 'efficientvit_', NOT 'vit_'/'deit_'/etc.
+#   → falls through to the CNN path in BirdCLEFModel (global_pool='',
+#     returns (B, C, H, W) feature map).  No model.py changes required.
+#
+# Input compatibility: 4 stages × stride 2 → requires H and W divisible by 16.
+#   - Training: (224, 513) — 224/16=14, 513/16≈32 ✓
+#   - Inference: (224, 128) — 224/16=14, 128/16=8 ✓
+#   - No dimension issues (unlike MaxViT which requires divisibility by 112).
+#
+# r288 tag: training resolution used for IN-1k checkpoint; irrelevant at our
+#   input dims — EfficientViT's depthwise conv handles variable spatial size.
+#
+# AMP + BF16: safe — no ScaledStdConv; BN in conv stages has standard FP16
+#   dynamic range behaviour.  GradScaler disabled automatically with use_bf16=true.
+#
+# SWA: backbone has BN layers in conv stages → safe_copy_bn_buffers required
+#   (same as EfficientNetV2-S and all other BN-containing backbones).
+#
+# LLRD: not applicable — not a standard ViT block structure; no .blocks attr.
+#
+# Feature dim: detected dynamically by dummy forward pass in BirdCLEFModel.__init__.
+#   Expected: 512 channels from the L2 final stage.
+#
+# Epochs: 25 (similar capacity to EfficientNetV2-S; one extra convergence buffer
+#   given the hybrid attention stages may need more warm-up to specialise).
+
+backbone: efficientvit_l2.r288_in1k
+use_amp: true
+use_bf16: true
+imagenet_norm: false
+use_llrd: false
+drop_path_rate: 0.15
+swa_start_epoch: 11
+warmup_epochs: 2
+lr: 5.0e-4
+weight_decay: 1.0e-4
+num_epochs: 25
+duration: 20

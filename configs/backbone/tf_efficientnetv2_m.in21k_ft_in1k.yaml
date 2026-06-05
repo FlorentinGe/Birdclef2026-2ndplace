@@ -1,0 +1,23 @@
+# EfficientNetV2-M backbone overrides
+# Untested as of exp28. 52.9M params, 1280 features (same SED head as S/L).
+# 1st place BirdCLEF 2025 used this variant.
+# Standard CNN with BatchNorm — AMP + BF16 safe.
+# SWA BN fix (safe_copy_bn_buffers) required — update_bn() causes NaN with EfficientNetV2.
+#
+# More parameters than S → slower convergence than S/RegNetY.
+# swa_start_epoch=11 (same as NFNet) rather than 8.
+# 25 epochs: M has more capacity to exploit late in training vs S.
+# Expect ~2-3× longer per epoch than S on RTX 4090.
+
+backbone: tf_efficientnetv2_m.in21k_ft_in1k
+use_amp: true
+use_bf16: true
+imagenet_norm: false
+use_llrd: false
+drop_path_rate: 0.15
+swa_start_epoch: 11
+warmup_epochs: 2
+lr: 5.0e-4
+weight_decay: 1.0e-4
+num_epochs: 25
+duration: 20

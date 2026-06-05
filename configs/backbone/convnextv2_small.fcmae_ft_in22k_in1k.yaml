@@ -1,0 +1,29 @@
+# ConvNeXt-V2-Small (FCMAE → IN-22k → IN-1k fine-tune)
+# 50M params, 768 features — roughly half the capacity of ConvNeXt-V2-Base.
+#
+# Use case: faster training and inference (~50% of Base compute) with a modest
+#   accuracy trade-off (85.8% vs 86.8% IN-1k top-1).  Prefer Base if training
+#   compute is available; prefer Small if GPU time is the binding constraint.
+#
+# Architecture identical to ConvNeXt-V2-Base in design (same FCMAE pretraining,
+#   LayerNorm, depthwise 7×7, inverted bottleneck) — only width differs.
+#
+# AMP + BF16: safe (same reasoning as Base).
+# SWA: safe_copy_bn_buffers required for SED head BN (same as all backbones).
+# imagenet_norm: false — see convnextv2_base note.
+#
+# Epochs: 25 (smaller model does not necessarily converge faster — the dataset
+#   is the bottleneck; same epoch budget as Base for a fair comparison).
+
+backbone: convnextv2_small.fcmae_ft_in22k_in1k
+use_amp: true
+use_bf16: true
+imagenet_norm: false
+use_llrd: false
+drop_path_rate: 0.15
+swa_start_epoch: 11
+warmup_epochs: 2
+lr: 5.0e-4
+weight_decay: 1.0e-4
+num_epochs: 25
+duration: 20

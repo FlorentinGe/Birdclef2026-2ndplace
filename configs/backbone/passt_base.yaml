@@ -1,0 +1,40 @@
+# PaSST-Base backbone overrides
+# hear21passt arch: passt_s_swa_p16_128_ap476
+# ViT-B/16 (embed_dim=768, depth=12), AudioSet-pretrained with SWA.
+# "s" = structured patchout (NOT "small").
+# Loaded via hear21passt (NOT a timm model): pip install 'hear21passt>=0.0.19'
+#
+# Key differences from timm ViT:
+#   - 128-mel / 1-channel input pipeline (vs 224-mel / 3-channel for CNN/ViT)
+#   - hop_length=320 + duration=10 → exactly 99 time patches (matches pretrained
+#     time_new_pos_embed); val chunks (5s → 49 patches) handled by CUT truncation
+#   - Patchout is disabled in PaSSTBackbone; our SpecAugment+bgaug replaces it
+#   - No imagenet_norm (pre-training used mel-normalised audio, not RGB stats)
+#   - use_llrd is available (PaSSTBackbone exposes .blocks) but not recommended
+#     for initial runs — PaSST pos enc is disentangled, not spatial like DINO
+#
+# AMP: BF16 is safe for ViT-style models on Ampere+ GPUs.
+#
+# SWA: start epoch 11 (same as NFNet / other 20-epoch runs).
+#
+# Inference note: depth=12 + stride=10 → 588 tokens per 5s chunk.
+# CPU inference for 600 files is several hours — use as offline teacher only.
+
+backbone: passt_base
+in_chans: 1
+n_mels: 128
+n_fft: 1024
+hop_length: 320
+fmin: 0
+fmax: 16000
+imagenet_norm: false
+use_llrd: false
+drop_path_rate: 0.0      # PaSST uses patchout for regularisation; we use SpecAugment instead
+use_amp: true
+use_bf16: true           # BF16 has FP32 dynamic range → no NaN risk; disables GradScaler
+swa_start_epoch: 11
+warmup_epochs: 2
+lr: 1.0e-4               # same order as DINO ViT (fine-tuning a pretrained transformer)
+weight_decay: 0.05       # ViT-style weight decay
+num_epochs: 20
+duration: 10

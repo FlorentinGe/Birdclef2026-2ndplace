@@ -1,0 +1,35 @@
+# EfficientNet-B3, Noisy Student pretraining on JFT-3B (Google)
+# 10.7M params, 1536 features, 7×16 spatial output @ 224×512 input.
+#
+# Pretraining: Noisy Student Training on JFT-3B — same regime as B4-NS.
+# Smaller than B4 (10.7M vs 17.5M), faster per epoch, different capacity
+# point for ensemble diversity.
+#
+# Directly validated: B3-NS was in the 2025 1st-place final ensemble
+# (iteration 3, fold 1, 25 epochs) alongside B4-NS and ECA-NFNet-L0.
+#
+# Pretrained backbone available from BirdCLEF 2025 1st place solution:
+#   extracted_backbones/tf_efficientnet_b3_ns_1st_place_backbone.pth
+# Note: 6 keys absent from checkpoint (bn2.* + conv_head.weight — final
+# head layers kept at timm ImageNet init).
+#
+# AMP + BF16: safe — standard BatchNorm architecture.
+# SWA start: 8 matches B4-NS and EffV2-S (similar convergence profile).
+# Epochs: 25 — consistent with B4-NS and 1st place training duration.
+
+backbone: tf_efficientnet_b3.ns_jft_in1k
+# freeze_epochs=0: backbone is already specialised on bird audio; letting it
+# move from ep1 produces more diverse predictions than freeze=2 (exp37 vs
+# exp37b: 0.64 vs 0.93 cosine similarity with exp35b).
+freeze_epochs: 0
+use_amp: true
+use_bf16: true
+imagenet_norm: false
+use_llrd: false
+drop_path_rate: 0.15
+swa_start_epoch: 8
+warmup_epochs: 2
+lr: 5.0e-4
+weight_decay: 1.0e-4
+num_epochs: 25
+duration: 20

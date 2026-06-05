@@ -1,0 +1,25 @@
+# ECA-NFNet-L0 backbone overrides
+# ScaledStdConv backbone; no BN in backbone layers.
+#
+# AMP:
+#   P100 / T4 (FP16 only):     use_amp: false   ← default here (safe fallback)
+#   RTX 30xx / 40xx / A100:    use_amp: true  + use_bf16: true  (pass via CLI)
+#     BF16 has FP32 dynamic range → ScaledStdConv NaN never occurs.
+#     GradScaler is automatically disabled when use_bf16=true.
+#
+# SWA start at epoch 11 (10-epoch warmup for fresh training from ImageNet).
+# LLRD not applicable — not a ViT.
+
+backbone: eca_nfnet_l0
+use_amp: false
+use_bf16: false
+imagenet_norm: false
+use_llrd: false
+drop_path_rate: 0.15
+swa_start_epoch: 11
+warmup_epochs: 2
+lr: 5.0e-4
+weight_decay: 1.0e-4
+num_epochs: 20
+duration: 20
+llrd_decay: 0.75

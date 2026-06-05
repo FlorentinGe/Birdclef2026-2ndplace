@@ -1,0 +1,54 @@
+# BirdCLEF+ 2026 — Python dependencies
+#
+# PyTorch stack — install BEFORE the rest to get the right CUDA build.
+#
+# IMPORTANT: choose the URL that matches your GPU architecture:
+#
+#   Kepler / Maxwell / Pascal / Volta / Turing — sm_37–sm_75 (K80, P100, T4):
+#     pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+#
+#   Ampere — sm_80–sm_86 (A100, RTX 30xx):
+#     pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+#
+#   Ada Lovelace — sm_89 (RTX 40xx, RTX 4000 Ada/Pro series):
+#     pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+#
+#   Blackwell — sm_120 (RTX 50xx, RTX PRO 4000/5000 Blackwell) — requires driver ≥ 570:
+#     pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+#
+#   Using a wheel that doesn't include your GPU's sm_XX causes:
+#     "RuntimeError: CUDA error: no kernel image is available for execution on the device"
+#
+# The lines below assume torch is already installed by the instance or by the
+# CUDA-specific command above. They pin minor versions for reproducibility but
+# allow patch releases.
+
+# ── Deep learning ─────────────────────────────────────────────────────────────
+# torch, torchvision, torchaudio — install separately with the correct CUDA index URL
+timm>=1.0.3,<2.0
+
+# ── Audio ─────────────────────────────────────────────────────────────────────
+soundfile>=0.12.1       # OGG/WAV loading with random-seek support (libsndfile C++ backend)
+
+# ── Data science ──────────────────────────────────────────────────────────────
+numpy>=1.24,<2.0
+pandas>=2.0
+scikit-learn>=1.3
+pyarrow>=14.0           # parquet support for Perch embedding metadata
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+tqdm>=4.65
+pyyaml>=6.0             # YAML config loading (optional but needed for backbone/stage YAMLs)
+
+# ── ONNX exports ──────────────────────────────────────────────────────────────
+onnx
+onnxruntime
+
+
+# ── PaSST ──────────────────────────────────────────────────────────────
+
+hear21passt>=0.0.19
+
+# ── Perch ──────────────────────────────────────────────────────────────
+
+#perch-hoplite[tf-cuda]

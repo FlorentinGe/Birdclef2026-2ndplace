@@ -1,0 +1,30 @@
+# ConvNeXt-Base (CLIP LAION-2B → IN-1k fine-tune with AugReg)
+# 87.6M params, 1024 features — same architecture as fb_in22k variant.
+#
+# Pretraining difference: contrastive text-image training on LAION-2B (2 billion
+# image-text pairs) before IN-1k fine-tune. The contrastive objective produces
+# representations that encode semantic similarity rather than cross-entropy
+# discrimination — expected to give a different feature geometry than the IN-22k
+# variant and potentially lower OOF correlation with current pool.
+#
+# imagenet_norm: false — model is fully fine-tuned from the CLIP checkpoint;
+# the backbone adapts to mel spectrogram statistics during training.
+# (CLIP used OpenAI normalisation stats during pretraining, but the subsequent
+# IN-1k fine-tune with AugReg brings it close to standard ImageNet statistics.
+# Either way, full fine-tuning on audio will dominate over init-time normalisation.)
+#
+# All other settings identical to fb_in22k variant.
+
+backbone: convnext_base.clip_laion2b_augreg_ft_in1k
+use_amp: true
+use_bf16: true
+imagenet_norm: false
+use_llrd: false
+drop_path_rate: 0.15
+swa_start_epoch: 11
+warmup_epochs: 2
+lr: 5.0e-4
+weight_decay: 1.0e-4
+num_epochs: 25
+duration: 20
+llrd_decay: 0.5

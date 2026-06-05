@@ -1,0 +1,38 @@
+# ViT-S/16 DINO backbone overrides
+# Drop-in replacement for vit_base_patch16_224.dino with ~4× lower inference cost.
+# d=384 (vs B d=768); 12 identical layers; same 16×16 patches → same sequence length
+# (14×8=112 tokens for 5s clips), so all positional embedding logic is unchanged.
+#
+# Inference timing (OpenVINO, CPU, 3-pass TTA):
+#   ViT-B: ~7.7 s/file  →  ViT-S: ~3.8 s/file (estimated, scales with d)
+#   With TTA disabled in ensemble ModelSpec:  ~1.3 s/file
+#
+# Accuracy vs ViT-B: expect ~0.008–0.012 LB loss standalone; diversity value in
+# ensemble is from transformer architecture, not model size.
+#
+# All ViT training notes carry over from ViT-B:
+#   - DURATION = 5 (= CHUNK_DURATION): train on 5s clips to match inference.
+#   - imagenet_norm: DINO patch embedding expects ImageNet-normalised inputs.
+#   - use_llrd: layer-wise LR decay; SED head=1.0×, patch_embed≈0.024×.
+#   - LR = 1e-4, weight_decay = 0.05.
+#   - time_mask = 20 (maintains ~15.6% mask ratio for 128 time frames).
+#   - SWA hurts ViT: always submit best-epoch checkpoint, not SWA.
+#     swa_start_epoch set late so SWA model is saved but best_model.pth
+#     is the primary submission artefact.
+#
+# No-KD training note: ViT-S converges faster than ViT-B (fewer params to fit).
+# 40 epochs should be sufficient; monitor whether loss plateaus before ep35.
+
+backbone: vit_small_patch16_224.dino
+use_amp: true
+imagenet_norm: true
+use_llrd: true
+llrd_decay: 0.75
+drop_path_rate: 0.15
+swa_start_epoch: 22
+warmup_epochs: 2
+lr: 1.0e-4
+weight_decay: 0.05
+num_epochs: 40
+duration: 5
+time_mask: 20

@@ -1,0 +1,30 @@
+# ViT-B/16 DINO backbone overrides
+# exp22/exp23: DINO self-supervised pretrained ViT-B.
+# Key differences from CNN:
+#   - DURATION = 5 (= CHUNK_DURATION): train on 5s clips to match inference;
+#     eliminates train/val context mismatch and double pos-embed interpolation.
+#     ViT global attention doesn't benefit from 75% silence tokens.
+#   - imagenet_norm: DINO patch embedding expects ImageNet-normalised inputs.
+#   - use_llrd: layer-wise LR decay; SED head=1.0×, patch_embed≈0.024×.
+#   - LR = 1e-4 (lower than CNN): ViT attention layers are sensitive to large updates.
+#   - weight_decay = 0.05 (higher than CNN): ViT lacks spatial inductive bias.
+#   - time_mask = 20 (scaled from 80): maintains ~15.6% mask ratio for 128 time frames.
+#   - eta_min = 0 in cosine scheduler (avoids eta_min > group_lr for deep layers).
+#   - SWA hurts ViT (exp22/23/19): always submit best-epoch checkpoint, not SWA.
+#     swa_start_epoch set late so SWA model is still saved but best_model.pth
+#     is the primary submission artifact.
+#   - AMP enabled.
+
+backbone: vit_base_patch16_224.dino
+use_amp: true
+imagenet_norm: true
+use_llrd: true
+llrd_decay: 0.75
+drop_path_rate: 0.15
+swa_start_epoch: 22
+warmup_epochs: 2
+lr: 1.0e-4
+weight_decay: 0.05
+num_epochs: 40
+duration: 5
+time_mask: 20
