@@ -1,6 +1,7 @@
 # BirdCLEF+ 2026
 
 Training codebase for the 2nd place solution to Kaggle's [BirdCLEF+ 2026 competition](https://www.kaggle.com/competitions/birdclef-2026/overview) — acoustic species identification from passive monitoring recordings in the Pantanal wetlands, South America.
+
 Kaggle write-up: https://www.kaggle.com/competitions/birdclef-2026/writeups/2nd-place-diverse-ensemble-with-pseudo-labeling-a
 
 **Task**: predict the presence/absence of 234 species in 5-second chunks of 1-minute soundscape recordings.  
@@ -115,6 +116,8 @@ python train.py --backbone eca_nfnet_l0 --stage supervised \
 
 ## Example usage
 
+In order to help with reproducibility, the example commands are similar to those I used for my solution, so they will be more verbose than necessary.
+
 ### Stage 1 — Perch2 knowledge distillation (optional warm-start)
 
 Trains the backbone to align its mel-spectrogram embeddings with stored Perch2 embeddings via cosine loss. Saves `pretrained_backbone.pth`.
@@ -205,7 +208,7 @@ python train.py --backbone tf_efficientnetv2_s.in21k_ft_in1k --stage sc_pl --sc_
 ### Stage 5 - Insecta/Amphibia specialist
 
 Trains a specialist model on insecta/amphibia data only, using extra XC data. Can optionally use pseudo-labeled soundscapes, although that branch didn't perform well in the competition.
-sc_pl_dir can be specified for diagnostic files generation, even if no pseudo-labels are used.
+sc_pl_dir can be specified for diagnostic files generation, even if no pseudo-labels are used. To use the pseudo-labels, add the --ai_use_sc_pl true option.
 
 ```bash
 python train.py --backbone tf_efficientnet_b0.ns_jft_in1k --stage ai_specialist --sc_pl_dir /path/to/sc_pl_round1 --batch_size 128 --use_amp true --use_bf16 true --num_workers 8 \
@@ -300,9 +303,12 @@ Two-part **composite AUC**:
 composite = (sc_mean × n_sc + focal_mean × n_focal) / (n_sc + n_focal)
 ```
 
-- **Soundscape AUC** (~75 classes): labelled soundscape chunks — domain-matched to the test set
-- **Focal AUC** (~159 classes): held-out focal clips for species absent from labelled soundscapes
+- **Soundscape AUC** (~15 classes): 15% of labelled soundscape files — domain-matched to the test set
+- **Focal AUC** (~188 classes): 10% of focal clips - can have some overlap with the above
+- **Unlabeled soundscapes**: 10% of the set are held out, used for cosine similarity metrics during training and oof comparisons.
 - Per-class AUC computed with a per-class loop (not `sklearn average='macro'`) to correctly skip all-zero columns
+- At least 1 soundscape file per soundscape-only species is forced into training. As a result, some species are not covered in the validation set (most notably the insecta sonotypes).
+- The validation set is kept constant throughout all training stages
 
 ---
 
