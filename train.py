@@ -393,7 +393,12 @@ def _run_ai_specialist(
         _sc_pl_csv  = _sc_pl_path / 'sc_pl.csv'
         _sc_pl_npy  = _sc_pl_path / 'sc_pl_preds_ensemble.npy'
         _val_txt    = _sc_pl_path / 'sc_pl_val_files.txt'
-        if _sc_pl_csv.exists() and _sc_pl_npy.exists():
+        if cfg.ai_use_sc_pl:
+            if not (_sc_pl_csv.exists() and _sc_pl_npy.exists()):
+                _missing = ([_sc_pl_csv.name] if not _sc_pl_csv.exists() else []) + \
+                           ([_sc_pl_npy.name] if not _sc_pl_npy.exists() else [])
+                print(f'SC PL: skipping ({", ".join(_missing)} not found in {cfg.sc_pl_dir})')
+        if cfg.ai_use_sc_pl and _sc_pl_csv.exists() and _sc_pl_npy.exists():
             _manifest  = pd.read_csv(_sc_pl_csv)
             _ens_preds = np.load(_sc_pl_npy)          # (M, 234)
             # Exclude labeled SC val files, unlabeled SC holdout, and labeled SC
@@ -429,10 +434,6 @@ def _run_ai_specialist(
             print(f'SC PL train (AI-masked): {len(_manifest):,} chunks from '
                   f'{_manifest["filename"].nunique():,} files  '
                   f'(conf mean={_pl_conf_weights.mean():.3f})')
-        else:
-            _missing = ([_sc_pl_csv.name] if not _sc_pl_csv.exists() else []) + \
-                       ([_sc_pl_npy.name] if not _sc_pl_npy.exists() else [])
-            print(f'SC PL: skipping ({", ".join(_missing)} not found in {cfg.sc_pl_dir})')
 
     # 3. XC extra focal clips
     xc_df['file_path'] = xc_df['filepath'].apply(lambda p: str(xc_dir / p))
