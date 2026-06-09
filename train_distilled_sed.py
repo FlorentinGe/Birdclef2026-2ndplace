@@ -95,19 +95,20 @@ USE_MORE_SC      = False   # SC share → 0.2, EPOCHS → 30
 BCE_WEIGHT      = 0.25
 SWA_START_EPOCH = 25
 
-# ── Local paths ───────────────────────────────────────────
-COMP_DIR = Path("/workspace/Birdclef/datasets/birdclef-2026")
+# ── Paths ─────────────────────────────────────────────────
+# Override these for local runs (or leave as-is on Kaggle).
+COMP_DIR = Path("/kaggle/input/competitions/birdclef-2026")
 TRAIN_AUDIO_DIR = COMP_DIR / "train_audio"
 SOUNDSCAPE_DIR  = COMP_DIR / "train_soundscapes"
 
-# Contains perch_focal_cache.npz, perch_sc_cache.npz, audio_cache_meta.csv
-PERCH_CACHE_DIR = Path("/workspace/Birdclef/datasets/Perch embeddings for SED")
+# Contains perch_focal_cache.npz, perch_sc_cache.npz, audio_cache_meta.csv,
+# soundscape_cache_meta.csv.  Set to None to disable Perch distillation.
+PERCH_CACHE_DIR = None  # e.g. Path("/kaggle/input/birdclef2026-perch-embeddings")
 
 # XC-pretrained backbone .pth (or None for ImageNet defaults)
-_xc_default = None
-XC_WEIGHTS_PATH= Path("/workspace/Birdclef/datasets/extracted_backbones/tf_efficientnetv2_s_in21k_pretrain_from_bigXCV2Ext_swa.ckpt")
+XC_WEIGHTS_PATH = None  # e.g. Path("/kaggle/input/my-dataset/backbone.pth")
 
-OUT_DIR = Path("/workspace/Birdclef/experiments/exp86b")
+OUT_DIR = Path("./runs/distilled_sed")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── Backbone & distillation mode ──────────────────────────
@@ -186,6 +187,7 @@ SOURCE_WEIGHTS = {"focal": 1.0, "focal_missing": 0.0, "sc": 1.0}
 # ── Derived: Perch cache availability ─────────────────────
 USE_PERCH_CACHE = (
     USE_PERCH_DISTILL
+    and PERCH_CACHE_DIR is not None
     and (PERCH_CACHE_DIR / "perch_focal_cache.npz").exists()
     and (PERCH_CACHE_DIR / "perch_sc_cache.npz").exists()
 )
