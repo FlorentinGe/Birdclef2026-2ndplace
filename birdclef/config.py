@@ -28,8 +28,8 @@ except ImportError:
 @dataclass
 class Config:
     # ── Paths ──────────────────────────────────────────────────────────────────
-    base_dir: str = '/workspace/Birdclef/datasets/birdclef-2026'
-    output_dir: str = '/workspace/Birdclef/experiments'
+    base_dir: str = '/kaggle/input/competitions/birdclef-2026'
+    output_dir: str = '/kaggle/working'
     # Override only if focal clips live outside base_dir/train_audio (default: None)
     # Set to the 4-shard WAV prefix to use the ttahara WAV dataset instead of OGG:
     #   /kaggle/input/datasets/ttahara/birdclef2026-train-audio-wav-
@@ -41,12 +41,7 @@ class Config:
     # Override only if soundscapes live elsewhere (default: base_dir/train_soundscapes)
     soundscape_dir: Optional[str] = None
     # KD stage: list of directories containing perch_train_arrays.npz + .parquet
-    #perch_embed_dirs: List[str] = field(default_factory=list)
-    perch_embed_dirs=[
-        base_dir + '/perch embeddings/results 0-3500',
-        base_dir + '/perch embeddings/results 3500-7000',
-        base_dir + '/perch embeddings/results 7000:10658',
-    ]
+    perch_embed_dirs: List[str] = field(default_factory=list)
     # Pseudo-label stages
     focal_pl_csv: Optional[str] = None   # CSV with columns: file_path, label_vec_path
     sc_pl_csv: Optional[str] = None      # CSV with columns: filename, start_sec, label_vec_path
@@ -56,6 +51,8 @@ class Config:
     ai_xc_species_csv: Optional[str] = None  # Path to birdclef2025_extra_species_data.csv
     ai_xc_species_dir: Optional[str] = None  # Path to birdclef2025_extra_species_data/data/
     use_xc_extra: bool = True                # Include XC extra focal data in ai_specialist
+    ai_use_sc_pl: bool = False               # Use sc_pl_dir as PL training data in
+                                             # ai_specialist (default False = OOF-only)
                                              # training.  Set False when backbone is already
                                              # XC-pretrained: XC clips carry label=0 for all
                                              # competition class indices, creating a ~33:1
@@ -439,6 +436,10 @@ def load_config(argv=None) -> Config:
                              'Set false when using an XC-pretrained backbone: XC clips have '
                              'label=0 for all competition class indices, producing a ~33:1 '
                              'negative-gradient ratio that collapses competition Insecta signal.')
+    parser.add_argument('--ai_use_sc_pl', type=lambda x: x.lower() != 'false', default=None,
+                        help='Use sc_pl_dir as pseudo-label training data in ai_specialist '
+                             '(default False). When False, sc_pl_dir is used only for OOF '
+                             'generation on the unlabeled SC holdout.')
     parser.add_argument('--ai_xc_species_csv', default=None,
                         help='Path to birdclef2025_extra_species_data.csv '
                              '(required for stage=ai_specialist)')
@@ -735,6 +736,7 @@ def load_config(argv=None) -> Config:
         'use_xc_extra':           args.use_xc_extra,
         'ai_xc_species_csv':      args.ai_xc_species_csv,
         'ai_xc_species_dir':      args.ai_xc_species_dir,
+        'ai_use_sc_pl':           args.ai_use_sc_pl,
         'num_epochs':             args.num_epochs,
         'batch_size':             args.batch_size,
         'lr':                     args.lr,
